@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat App</title>
+</head>
+<body>
+  <ul id="messages"></ul>
+  <input id="messageInput" autocomplete="off" /><button onclick="sendMessage()">Send</button>
+  <p id="typingIndicator"></p>
+  <ul id="users"></ul>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    const username = prompt('Ingrese su nombre de usuario:');
+    socket.emit('username', username);
+    socket.on('chat message', (msg) => {
+      const item = document.createElement('li');
+      item.textContent = msg;
+      document.getElementById('messages').appendChild(item);
+    });
+
+    socket.on('typing', (message) => {
+      document.getElementById('typingIndicator').textContent = message;
+    });
+    socket.on('user connected', (users) => {
+      const userList = document.getElementById('users');
+      userList.innerHTML = '';
+      users.forEach((user) => {
+        const item = document.createElement('li');
+        item.textContent = user;
+        userList.appendChild(item);
+      });
+    });
+
+    function sendMessage() {
+      const messageInput = document.getElementById('messageInput');
+      const message = messageInput.value;
+      socket.emit('chat message', message);
+      messageInput.value = '';
+    }
+
+    document.getElementById('messageInput').addEventListener('input', () => {
+      socket.emit('typing');
+    });
+
+    function sendPrivateMessage(recipientId) {
+      const message = prompt('Ingrese su mensaje:');
+      if (message) {
+        socket.emit('private message', { recipientId, message });
+      }
+    }
+  </script>
+</body>
+</html>
